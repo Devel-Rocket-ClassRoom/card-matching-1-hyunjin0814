@@ -1,16 +1,19 @@
 ﻿using System;
-using System.Reflection;
 using System.Threading;
 
 class GameManager
 {
     Card card;
     bool[] hiddenArray;
+    bool IsSecondCard;
     int maxTry = 20;
     int tryCount;
     int pairCount;
-    int _row;
-    int _col;
+    int totalRow;
+    int totalCol;
+    int FirstRow;
+    int FirstCol;
+    int index;
 
     public GameManager(Card card)
     {
@@ -21,8 +24,8 @@ class GameManager
     {
         tryCount = 0;
         pairCount = 0;
-        _row = row;
-        _col = col;
+        totalRow = row;
+        totalCol = col;
         card.MakeCards(row, col);
         card.Shuffle();
         hiddenArray = new bool[row * col];
@@ -36,24 +39,24 @@ class GameManager
     {
         Console.Clear();
         Console.Write("     ");
-        for (int i = 0; i < _col; i++)
+        for (int i = 0; i < totalCol; i++)
         {
             Console.Write($"{i + 1}열  ");
         }
         Console.WriteLine();
 
-        for (int j = 0; j < _row; j++)
+        for (int j = 0; j < totalRow; j++)
         {
             Console.Write($"{j + 1}행  ");
-            for (int k = 0; k < _col; k++)
+            for (int k = 0; k < totalCol; k++)
             {
-                if (hiddenArray[j * _col + k])
+                if (hiddenArray[j * totalCol + k])
                 {
                     Console.Write($"**  ");
                 }
                 else
                 {
-                    Console.Write($"[{card.CardFlip(j * _col + k)}] ");
+                    Console.Write($"[{card.ReturnCard(j * totalCol + k)}] ");
                 }
             }
             Console.WriteLine();
@@ -63,41 +66,111 @@ class GameManager
         Console.WriteLine();
     }
 
-    public int InputRowCol(string text)
+    //public int InputRowCol(string text)
+    //{
+    //    while (true)
+    //    {
+    //        Console.Write($"{text} 번째 카드를 선택하세요 (행 열): ");
+    //        string input = Console.ReadLine();
+
+    //        string[] numbers = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries); // 연속된 공백 처리
+    //        if (numbers.Length != 2)
+    //        {
+    //            Console.WriteLine("행과 열을 공백으로 구분하여 입력하세요. (예: 1 3)");
+    //            continue;
+    //        }
+
+    //        int row = int.Parse(numbers[0]);
+    //        int col = int.Parse(numbers[1]);
+    //        if (row > _row || row < 1 || col > _col || col < 1)
+    //        {
+    //            Console.WriteLine("행은 1~4, 열은 1~4 범위로 입력하세요.");
+    //            continue;
+    //        }
+            
+    //        int index = (row - 1) * _col + col - 1;
+    //        hiddenArray[index] = false;
+    //        return index;
+    //    }
+    //}
+
+    public int CardFlip_2()
     {
         while (true)
         {
-            Console.Write($"{text} 번째 카드를 선택하세요 (행 열): ");
-            string input = Console.ReadLine();
+            string input;
 
-            string[] numbers = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries); // 연속된 공백 처리
-            if (numbers.Length != 2)
+            if (!IsSecondCard)
             {
-                Console.WriteLine("행과 열을 공백으로 구분하여 입력하세요. (예: 1 3)");
-                continue;
+                Console.Write("첫 번째 카드를 선택하세요 (행 열): ");
+                input = Console.ReadLine();
+            }
+            else
+            {
+                Console.Write("두 번째 카드를 선택하세요 (행 열): ");
+                input = Console.ReadLine();
             }
 
-            int row = int.Parse(numbers[0]);
-            int col = int.Parse(numbers[1]);
-            if (row > _row || row < 1 || col > _col || col < 1)
+            if (Validation(input))
             {
-                Console.WriteLine("행은 1~4, 열은 1~4 범위로 입력하세요.");
-                continue;
+                hiddenArray[index] = false;
+                return index;
             }
-            
-            int index = (row - 1) * _col + col - 1;
-            hiddenArray[index] = false;
-            return index;
         }
     }
 
-    public void CardFlip()
+    public bool Validation(string input)
     {
-        int firstIndex = InputRowCol("첫");
+        string[] numbers = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries); // 연속된 공백 처리
+
+        // 행과 열로 분리해서 숫자 2개가 나오는지 검사
+        if (numbers.Length != 2)
+        {
+            Console.WriteLine("행과 열을 공백으로 구분하여 입력하세요. (예: 1 3)");
+            return false;
+        }
+
+        int row = int.Parse(numbers[0]);
+        int col = int.Parse(numbers[1]);
+
+        // 행과 열의 범위 검사
+        if (row > totalRow || row < 1 || col > totalCol || col < 1)
+        {
+            Console.WriteLine("행은 1~4, 열은 1~4 범위로 입력하세요.");
+            return false;
+        }
+
+        // 첫번째 입력값은 통과
+        if (!IsSecondCard)
+        {
+            FirstRow = row;
+            FirstCol = col;
+            index = (row - 1) * totalCol + col - 1;
+            IsSecondCard = !IsSecondCard;
+            return true;
+        }
+        // 두번째 입력값은 첫번째 입력값과 비교
+        else
+        {
+            if (FirstRow == row && FirstCol == col)
+            {
+                Console.WriteLine("같은 카드를 선택할 수 없습니다. 다른 카드를 선택하세요.");
+                return false;
+            }
+        }
+
+        index = (row - 1) * totalCol + col - 1;
+        IsSecondCard = !IsSecondCard;
+        return true;
+    }
+
+    public void CompareCards()
+    {
+        int firstIndex = CardFlip_2();
         PrintScreen();
-        int secondIndex = InputRowCol("두");
+        int secondIndex = CardFlip_2();
         tryCount++;
-        if (card.CardFlip(firstIndex) == card.CardFlip(secondIndex))
+        if (card.ReturnCard(firstIndex) == card.ReturnCard(secondIndex))
         {
             pairCount++;
             PrintScreen();
@@ -122,7 +195,18 @@ class GameManager
         while (exit != "N")
         {
             PrintScreen();
-            if (tryCount == maxTry)
+            if (pairCount == card.totalPair)
+            {
+                Console.WriteLine("=== 게임 클리어! ===");
+                Console.WriteLine($"총 시도 횟수: {tryCount}");
+
+                Console.WriteLine();
+                Console.Write("새 게임을 하시겠습니까? (Y/N): ");
+                exit = Console.ReadLine().ToUpper();
+
+                MakeArray(4, 4);
+            }
+            else if (tryCount == maxTry)
             {
                 Console.WriteLine("=== 게임 오버! ===");
                 Console.WriteLine("시도 횟수를 모두 사용했습니다.");
@@ -134,20 +218,9 @@ class GameManager
 
                 MakeArray(4, 4);
             }
-            else if (pairCount == card.totalPair)
-            {
-                Console.WriteLine("=== 게임 클리어! ===");
-                Console.WriteLine($"총 시도 횟수: {tryCount}");
-
-                Console.WriteLine();
-                Console.Write("새 게임을 하시겠습니까? (Y/N): ");
-                exit = Console.ReadLine().ToUpper();
-
-                MakeArray(4, 4);
-            }
             else
             {
-                CardFlip();
+                CompareCards();
             }
         }
     }

@@ -31,7 +31,7 @@ class Card
         Thread.Sleep(1000);
     }
 
-    public int CardFlip(int index)
+    public int ReturnCard(int index)
     {
         return cards[index];
     }
